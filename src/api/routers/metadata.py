@@ -22,8 +22,6 @@ def upload_file(response: Response, file: UploadFile = File(..., media_type="aud
         return metadata
     except (MutagenError, NoMetaDataError, IOError) as e:
         if type(e) == NoMetaDataError:
-            # 404 indicates normally that the specified resource was not found,
-            # but it is also possible to use it when requested data is missing (metadata)
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e.args[0]))
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e.args[0]))
         else:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e.args[0]))
