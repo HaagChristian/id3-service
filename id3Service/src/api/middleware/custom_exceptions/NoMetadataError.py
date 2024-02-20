@@ -1,2 +1,0 @@
-class NoMetaDataError(Exception):
-    pass
