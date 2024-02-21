@@ -1,14 +1,15 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
 
 
 class MetadataResponse(BaseModel):
     title: Optional[str] = None
-    artist: Optional[str] = None
+    artists: Optional[List[str]] = None
     album: Optional[str] = None
     genre: Optional[str] = None
     date: Optional[str] = None
+    duration: Optional[float] = None
     failed_tags: list = []
 
     # check if any of the fields are None
