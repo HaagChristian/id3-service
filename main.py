@@ -37,7 +37,7 @@ app.add_middleware(
 
 def main():
     logging.info("run main")
-    uvicorn.run(app, port=3000)
+    uvicorn.run(app, port=8001)
 
 
 @app.get("/")
