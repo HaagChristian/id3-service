@@ -7,7 +7,7 @@ name = "pypi"
 fastapi = "*"
 uvicorn = "*"
 pydantic = { version = "*", extras = ["email"] }
-python-magic-bin = "*"
+python-magic-bin = "0.4.14"
 python-multipart = "*"
 mutagen = "*"
 
@@ -15,4 +15,4 @@ mutagen = "*"
 
 [requires]
 python_version = "3.11"
-python_full_version = "3.11.1"
+
