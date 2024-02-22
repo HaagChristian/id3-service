@@ -19,3 +19,10 @@ class MetadataResponse(BaseModel):
         for field_name, field_value in self:
             if field_value is None:
                 self.failed_tags.append(field_name)
+
+
+class MetadataToChange(BaseModel):
+    artist: Optional[str] = None
+    genre: Optional[str] = None
+    album: Optional[str] = None
+    title: Optional[str] = None
