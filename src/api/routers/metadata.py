@@ -1,11 +1,14 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Body
 from mutagen import MutagenError
 from starlette import status
 from starlette.responses import Response
 
+from src.api.middleware.custom_exceptions.MissingFileName import MissingFileNameError
 from src.api.middleware.custom_exceptions.NoMetadataError import NoMetaDataError
-from src.api.myapi.metadata_model import MetadataResponse, MetadataToChange
+from src.api.middleware.custom_exceptions.NoMetadataPassedError import NoMetadataPassedError
+from src.api.myapi.metadata_model import MetadataResponse, MetadataToChangeInput
 from src.service.work_with_metadata import extract_metadata_from_mp3_file, update_metadata_from_file
+from src.settings.error_messages import MISSING_PARAMETER
 
 router = APIRouter(
     prefix="/api/metadata", tags=["ID3 Service"]
@@ -29,12 +32,16 @@ def upload_file(response: Response,
 
 
 @router.post("/update-metadata")
-def update_metadata(metadata: MetadataToChange, file: UploadFile = File(..., media_type="audio/mpeg",
-                                                                        description="The mp3 file where the metadata should be updated")):
+def update_metadata(metadata: MetadataToChangeInput = Body(...), file: UploadFile = File(..., media_type="audio/mpeg",
+                                                                                         description="The mp3 file where the metadata should be updated")):
     try:
-        update_metadata_from_file(file=file, metadata=metadata)
-    except (MutagenError, NoMetaDataError, IOError) as e:
-        if type(e) == NoMetaDataError:
+        # check input
+        if 'None' in metadata.album and 'None' in metadata.artist and 'None' in metadata.genre and 'None' in metadata.title:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=MISSING_PARAMETER)
+
+        return update_metadata_from_file(file=file, metadata=metadata)
+    except (MutagenError, NoMetaDataError, IOError, NoMetaDataError, MissingFileNameError) as e:
+        if type(e) == NoMetaDataError or type(e) == NoMetadataPassedError or type(e) == MissingFileNameError:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e.args[0]))
         else:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e.args[0]))

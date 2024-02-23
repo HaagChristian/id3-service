@@ -1,6 +1,7 @@
+import json
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class MetadataResponse(BaseModel):
@@ -21,8 +22,16 @@ class MetadataResponse(BaseModel):
                 self.failed_tags.append(field_name)
 
 
-class MetadataToChange(BaseModel):
+class MetadataToChangeInput(BaseModel):
     artist: Optional[str] = None
     genre: Optional[str] = None
     album: Optional[str] = None
     title: Optional[str] = None
+    file_name: Optional[str] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value

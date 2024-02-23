@@ -2,9 +2,10 @@ from fastapi import UploadFile
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
+from src.api.middleware.custom_exceptions.MissingFileName import MissingFileNameError
 from src.api.middleware.custom_exceptions.NoMetadataError import NoMetaDataError
-from src.api.myapi.metadata_model import MetadataResponse, MetadataToChange
-from src.settings.error_messages import NO_METADATA_ERROR
+from src.api.myapi.metadata_model import MetadataResponse, MetadataToChangeInput
+from src.settings.error_messages import NO_METADATA_ERROR, MISSING_FILENAME
 
 
 def extract_metadata_from_mp3_file(file: UploadFile) -> MetadataResponse:
@@ -30,19 +31,29 @@ def extract_metadata_from_mp3_file(file: UploadFile) -> MetadataResponse:
     return metadata_response
 
 
-def update_metadata_from_file(file: UploadFile, metadata: MetadataToChange) -> UploadFile:
+def update_metadata_from_file(file: UploadFile, metadata: MetadataToChangeInput) -> UploadFile:
+    if not file.filename and 'None' in metadata.file_name:
+        raise MissingFileNameError(MISSING_FILENAME)
+
+    if 'None' not in metadata.file_name:
+        file.filename = metadata.file_name
+
     audio = MP3(file.file, ID3=EasyID3)
 
-    if metadata.title:
+    if 'None' not in metadata.title:
         audio['title'] = metadata.title
-    if metadata.artists:
-        audio['artist'] = metadata.artists
-    if metadata.album:
+    if 'None' not in metadata.artist:
+        audio['artist'] = metadata.artist
+    if 'None' not in metadata.album:
         audio['album'] = metadata.album
-    if metadata.genre:
+    if 'None' not in metadata.genre:
         audio['genre'] = metadata.genre
-    if metadata.date:
-        audio['date'] = metadata.date
+
+    audio.filename = file.filename
+
+    if not audio.filename:
+        # file.filename is invalid and metadata.file_name is None
+        raise MissingFileNameError(MISSING_FILENAME)
     audio.save()
 
     return file
