@@ -72,6 +72,8 @@ def update_metadata_from_file(file: UploadFile, metadata: MetadataToChangeInput)
                 audio['album'] = metadata.album
             if 'None' not in metadata.genre:
                 audio['genre'] = metadata.genre
+            if 'None' not in metadata.date:
+                audio['date'] = metadata.date
 
             audio.save()
             with open(temp_file_path, 'rb') as updated_file:

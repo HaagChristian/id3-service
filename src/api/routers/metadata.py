@@ -41,7 +41,7 @@ def update_metadata(metadata: MetadataToChangeInput = Body(...), file: UploadFil
     try:
         # check input
         if 'None' in metadata.album and 'None' in metadata.artist and 'None' in metadata.genre and \
-                'None' in metadata.title:
+                'None' in metadata.title and 'None' in metadata.date:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=MISSING_PARAMETER)
 
         temp_file_path, temp_file = update_metadata_from_file(file=file, metadata=metadata)
