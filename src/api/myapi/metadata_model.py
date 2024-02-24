@@ -27,7 +27,6 @@ class MetadataToChangeInput(BaseModel):
     genre: Optional[str] = None
     album: Optional[str] = None
     title: Optional[str] = None
-    file_name: Optional[str] = None
 
     @model_validator(mode='before')
     @classmethod

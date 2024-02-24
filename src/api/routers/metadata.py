@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, UploadFile, File, HTTPException, Body
 from mutagen import MutagenError
 from starlette import status
-from starlette.responses import Response
+from starlette.background import BackgroundTask
+from starlette.responses import Response, FileResponse
 
+from src.api.middleware.cleanup import cleanup
 from src.api.middleware.custom_exceptions.MissingFileName import MissingFileNameError
 from src.api.middleware.custom_exceptions.NoMetadataError import NoMetaDataError
 from src.api.middleware.custom_exceptions.NoMetadataPassedError import NoMetadataPassedError
@@ -36,12 +40,17 @@ def update_metadata(metadata: MetadataToChangeInput = Body(...), file: UploadFil
                                                                                          description="The mp3 file where the metadata should be updated")):
     try:
         # check input
-        if 'None' in metadata.album and 'None' in metadata.artist and 'None' in metadata.genre and 'None' in metadata.title:
+        if 'None' in metadata.album and 'None' in metadata.artist and 'None' in metadata.genre and \
+                'None' in metadata.title:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=MISSING_PARAMETER)
 
-        return update_metadata_from_file(file=file, metadata=metadata)
-    except (MutagenError, NoMetaDataError, IOError, NoMetaDataError, MissingFileNameError) as e:
+        temp_file_path, temp_file = update_metadata_from_file(file=file, metadata=metadata)
+        return FileResponse(temp_file_path,
+                            background=BackgroundTask(cleanup, temp_file_path=temp_file_path, temp_file=temp_file))
+    except (MutagenError, NoMetaDataError, IOError, NoMetaDataError, MissingFileNameError, FileNotFoundError) as e:
         if type(e) == NoMetaDataError or type(e) == NoMetadataPassedError or type(e) == MissingFileNameError:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e.args[0]))
         else:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e.args[0]))
+            logging.error(f'Error occurred while updating metadata: {e}')
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail='Internal server error occurred. Please try again later.')

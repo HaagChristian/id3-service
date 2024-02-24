@@ -1,7 +1,13 @@
+import logging
+import tempfile
+from typing import Tuple
+
 from fastapi import UploadFile
+from mutagen import MutagenError
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
+from src.api.middleware.cleanup import cleanup
 from src.api.middleware.custom_exceptions.MissingFileName import MissingFileNameError
 from src.api.middleware.custom_exceptions.NoMetadataError import NoMetaDataError
 from src.api.myapi.metadata_model import MetadataResponse, MetadataToChangeInput
@@ -31,29 +37,60 @@ def extract_metadata_from_mp3_file(file: UploadFile) -> MetadataResponse:
     return metadata_response
 
 
-def update_metadata_from_file(file: UploadFile, metadata: MetadataToChangeInput) -> UploadFile:
-    if not file.filename and 'None' in metadata.file_name:
-        raise MissingFileNameError(MISSING_FILENAME)
+def update_metadata_from_file(file: UploadFile, metadata: MetadataToChangeInput) -> Tuple[str, tempfile.TemporaryFile]:
+    """
+    Input file (file) needs to be written to a temporary file in order to be able to update the metadata.
+    This is because the file is a stream and cannot be updated directly.
+    The audio file is read again from the temporary file to update the original file.
 
-    if 'None' not in metadata.file_name:
-        file.filename = metadata.file_name
+    The temporary file needs to be delete = False, because otherwise the audio object could not
+    read the temporary file (PermissionError).
 
-    audio = MP3(file.file, ID3=EasyID3)
+    :param file: MP3 file
+    :param metadata: MetadataToChangeInput
+    :return: UploadFile
 
-    if 'None' not in metadata.title:
-        audio['title'] = metadata.title
-    if 'None' not in metadata.artist:
-        audio['artist'] = metadata.artist
-    if 'None' not in metadata.album:
-        audio['album'] = metadata.album
-    if 'None' not in metadata.genre:
-        audio['genre'] = metadata.genre
+    :raises:
+    FileNotFoundError: mp3 file not found
+    MutagenError: general error while updating the metadata
+    """
+    try:
+        if not file.filename:
+            raise MissingFileNameError(MISSING_FILENAME)
 
-    audio.filename = file.filename
+        with tempfile.TemporaryFile(delete=False) as temp_file:
+            temp_file_path = temp_file.name
+            temp_file.write(file.file.read())
 
-    if not audio.filename:
-        # file.filename is invalid and metadata.file_name is None
-        raise MissingFileNameError(MISSING_FILENAME)
-    audio.save()
+            audio = MP3(temp_file_path, ID3=EasyID3)
 
-    return file
+            if 'None' not in metadata.title:
+                audio['title'] = metadata.title
+            if 'None' not in metadata.artist:
+                audio['artist'] = metadata.artist
+            if 'None' not in metadata.album:
+                audio['album'] = metadata.album
+            if 'None' not in metadata.genre:
+                audio['genre'] = metadata.genre
+
+            audio.save()
+            with open(temp_file_path, 'rb') as updated_file:
+                updated_content = updated_file.read()
+
+            file.file.seek(0)
+
+            # Update the content of the original file with the updated content
+            file.file.write(updated_content)
+
+            file.file.seek(0)
+            if not audio.filename:
+                # file.filename is invalid
+                raise MissingFileNameError(MISSING_FILENAME)
+            return temp_file_path, temp_file
+    except (FileNotFoundError, MutagenError) as e:
+        try:
+            cleanup(temp_file_path=temp_file_path, temp_file=temp_file)
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            logging.error('Could not close temporary file.')
+            pass
+        raise e
