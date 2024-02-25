@@ -12,7 +12,7 @@ from src.api.middleware.custom_exceptions.NoMetadataError import NoMetaDataError
 from src.api.middleware.custom_exceptions.NoMetadataPassedError import NoMetadataPassedError
 from src.api.myapi.metadata_model import MetadataResponse, MetadataToChangeInput
 from src.service.work_with_metadata import extract_metadata_from_mp3_file, update_metadata_from_file
-from src.settings.error_messages import MISSING_PARAMETER
+from src.settings.error_messages import MISSING_PARAMETER, INVALID_INPUT
 
 router = APIRouter(
     prefix="/api/metadata", tags=["ID3 Service"]
@@ -43,6 +43,11 @@ def update_metadata(metadata: MetadataToChangeInput = Body(...), file: UploadFil
         if 'None' in metadata.album and 'None' in metadata.artist and 'None' in metadata.genre and \
                 'None' in metadata.title and 'None' in metadata.date:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=MISSING_PARAMETER)
+        for key, value in metadata:
+            if not value:
+                # value is type None
+                # --> Because of the way the metadata is passed, the value is always a string
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=INVALID_INPUT)
 
         temp_file_path, temp_file = update_metadata_from_file(file=file, metadata=metadata)
         return FileResponse(temp_file_path,
