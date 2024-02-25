@@ -58,7 +58,7 @@ def update_metadata_from_file(file: UploadFile, metadata: MetadataToChangeInput)
         if not file.filename:
             raise MissingFileNameError(MISSING_FILENAME)
 
-        with tempfile.TemporaryFile(delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_file_path = temp_file.name
             temp_file.write(file.file.read())
 
