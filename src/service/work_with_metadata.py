@@ -79,12 +79,12 @@ def update_metadata_from_file(file: UploadFile, metadata: MetadataToChangeInput)
             with open(temp_file_path, 'rb') as updated_file:
                 updated_content = updated_file.read()
 
-            file.file.seek(0)
+            file.file.seek(0)  # set file pointer to the beginning of the file
 
             # Update the content of the original file with the updated content
             file.file.write(updated_content)
-
             file.file.seek(0)
+
             if not audio.filename:
                 # file.filename is invalid
                 raise MissingFileNameError(MISSING_FILENAME)

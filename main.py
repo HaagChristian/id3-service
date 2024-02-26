@@ -11,7 +11,7 @@ from src.api.routers import metadata
 version: str = "0.0.1"
 app_name: str = "ID3 Service"
 instance_uuid: str = str(uuid.uuid4())
-app_description: str = "This is a simple service to extract metadata from mp3 files. "
+app_description: str = "This is a simple service to handle metadata of mp3 files."
 contact_name: str = "Christian Haag"
 
 app = FastAPI(

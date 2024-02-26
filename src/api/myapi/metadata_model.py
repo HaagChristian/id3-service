@@ -29,6 +29,9 @@ class MetadataToChangeInput(BaseModel):
     title: Optional[str] = None
     date: Optional[str] = None
 
+    # map input data (json string) to the model
+    # None type is mapped to 'None' string
+    # this mapping is necessary because the input data is a json string --> accepting file and json data
     @model_validator(mode='before')
     @classmethod
     def validate_to_json(cls, value):

@@ -37,12 +37,16 @@ def upload_file(response: Response,
 
 @router.post("/update-metadata")
 def update_metadata(metadata: MetadataToChangeInput = Body(...), file: UploadFile = File(..., media_type="audio/mpeg",
-                                                                                         description="The mp3 file where the metadata should be updated")):
+                                                                                         description="The mp3 file "
+                                                                                                     "where the "
+                                                                                                     "metadata should "
+                                                                                                     "be updated")):
     try:
         # check input
         if 'None' in metadata.album and 'None' in metadata.artist and 'None' in metadata.genre and \
                 'None' in metadata.title and 'None' in metadata.date:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=MISSING_PARAMETER)
+
         for key, value in metadata:
             if not value:
                 # value is type None
@@ -50,6 +54,8 @@ def update_metadata(metadata: MetadataToChangeInput = Body(...), file: UploadFil
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=INVALID_INPUT)
 
         temp_file_path, temp_file = update_metadata_from_file(file=file, metadata=metadata)
+
+        # run background task to delete the temp file after the response is sent
         return FileResponse(temp_file_path,
                             background=BackgroundTask(cleanup, temp_file_path=temp_file_path, temp_file=temp_file))
     except (MutagenError, NoMetaDataError, IOError, NoMetaDataError, MissingFileNameError, FileNotFoundError) as e:
