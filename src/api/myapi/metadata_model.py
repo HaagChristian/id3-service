@@ -9,7 +9,7 @@ class MetadataResponse(BaseModel):
     artists: Optional[List[str]] = None
     album: Optional[str] = None
     genre: Optional[str] = None
-    date: Optional[str] = None
+    date: Optional[int] = None
     duration: Optional[float] = None
     failed_tags: list = []
 
@@ -28,6 +28,8 @@ class MetadataToChangeInput(BaseModel):
     album: Optional[str] = None
     title: Optional[str] = None
     date: Optional[str] = None
+
+    # date has to be as string because it is provided as JSON string and that's why int is not possible
 
     # map input data (json string) to the model
     # None type is mapped to 'None' string

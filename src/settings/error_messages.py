@@ -5,3 +5,5 @@ MISSING_PARAMETER: str = "Please specify at least one metadata field"
 INVALID_INPUT: str = "Invalid metadata input"
 
 MISSING_FILENAME: str = "Please specify a file name, either in the file or in the metadata"
+
+INVALID_YEAR: str = "Invalid year. Please provide a valid year in the metadata"
