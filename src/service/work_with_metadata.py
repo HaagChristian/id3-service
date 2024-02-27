@@ -21,7 +21,7 @@ def extract_metadata_from_mp3_file(file: UploadFile) -> MetadataResponse:
         raise NoMetaDataError(NO_METADATA_ERROR)
 
     # map artists to list of strings
-    artist_list: list = audio.get('artist', [None])
+    artist_list: list = audio.get('artist', None)
     if artist_list:
         split_list = artist_list[0].split(';')
     else:
@@ -30,11 +30,15 @@ def extract_metadata_from_mp3_file(file: UploadFile) -> MetadataResponse:
     # validate that data is an integer (if it is not None)
     date_from_metadata = audio.get('date', [None])[0]
     year = None
+
     if date_from_metadata:
-        try:
+        try:  # try to convert the date to an integer
             year = int(date_from_metadata)
         except ValueError:
-            raise ValueError(INVALID_YEAR)
+            try:  # try to split the date and take the year
+                year = int(date_from_metadata.split('-')[0])
+            except ValueError:
+                raise ValueError(INVALID_YEAR)
 
     metadata_response = MetadataResponse(
         title=audio.get('title', [None])[0],
