@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Body
 from mutagen import MutagenError
+from mutagen.mp3 import HeaderNotFoundError
 from starlette import status
 from starlette.background import BackgroundTask
 from starlette.responses import Response, FileResponse
@@ -28,7 +29,7 @@ def upload_file(response: Response,
             # specifies that the request was successful but some parts of the metadata are missing
             response.status_code = status.HTTP_206_PARTIAL_CONTENT
         return metadata
-    except (MutagenError, NoMetaDataError, IOError) as e:
+    except (MutagenError, NoMetaDataError, HeaderNotFoundError, IOError, UnicodeDecodeError) as e:
         if type(e) == NoMetaDataError:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e.args[0]))
         else:
@@ -58,7 +59,8 @@ def update_metadata(metadata: MetadataToChangeInput = Body(...), file: UploadFil
         # run background task to delete the temp file after the response is sent
         return FileResponse(temp_file_path,
                             background=BackgroundTask(cleanup, temp_file_path=temp_file_path, temp_file=temp_file))
-    except (MutagenError, NoMetaDataError, IOError, NoMetaDataError, MissingFileNameError, FileNotFoundError) as e:
+    except (MutagenError, NoMetaDataError, IOError, NoMetaDataError, MissingFileNameError, FileNotFoundError,
+            HeaderNotFoundError, UnicodeDecodeError) as e:
         if type(e) == NoMetaDataError or type(e) == NoMetadataPassedError or type(e) == MissingFileNameError:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e.args[0]))
         else:
