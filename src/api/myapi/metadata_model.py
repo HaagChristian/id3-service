@@ -1,7 +1,7 @@
 import json
 from typing import Optional, List
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field
 
 
 class MetadataResponse(BaseModel):
@@ -23,11 +23,11 @@ class MetadataResponse(BaseModel):
 
 
 class MetadataToChangeInput(BaseModel):
-    artist: Optional[str] = None
-    genre: Optional[str] = None
-    album: Optional[str] = None
-    title: Optional[str] = None
-    date: Optional[str] = None
+    artist: Optional[str] = Field(None, min_length=1, max_length=100)
+    genre: Optional[str] = Field(None, min_length=1, max_length=100)
+    album: Optional[str] = Field(None, min_length=1, max_length=100)
+    title: Optional[str] = Field(None, min_length=1, max_length=100)
+    date: Optional[str] = Field(None, min_length=1, max_length=100)
 
     # date has to be as string because it is provided as JSON string and that's why int is not possible
 
